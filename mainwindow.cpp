@@ -13,21 +13,21 @@ MainWindow::MainWindow(QWidget *parent)
         return pixmap;
     };
 
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-    ui->widget->addPixmap(generalPixmap());
-//    ui->widget->addPixmap(QPixmap(":/test/images/img1.jpg"));
-//    ui->widget->addPixmap(QPixmap(":/test/images/img2.jpg"));
-//    ui->widget->addPixmap(QPixmap(":/test/images/img3.jpg"));
-//    ui->widget->addPixmap(QPixmap(":/test/images/img4.jpg"));
-//    ui->widget->addPixmap(QPixmap(":/test/images/img5.jpg"));
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+//    ui->widget->addPixmap(generalPixmap());
+    ui->widget->addPixmap(QPixmap(":/test/images/img1.jpg"));
+    ui->widget->addPixmap(QPixmap(":/test/images/img2.jpg"));
+    ui->widget->addPixmap(QPixmap(":/test/images/img3.jpg"));
+    ui->widget->addPixmap(QPixmap(":/test/images/img4.jpg"));
+    ui->widget->addPixmap(QPixmap(":/test/images/img5.jpg"));
     ui->widget->setCurrentIndex(0);
     ui->widget->adjustSize();
 }
