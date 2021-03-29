@@ -22,11 +22,13 @@ SOURCES += \
     interactive_buttons/interactivebuttonbase.cpp \
     main.cpp \
     mainwindow.cpp \
+    slide_show/sidehidelabel.cpp \
     slide_show/slideshow.cpp
 
 HEADERS += \
     interactive_buttons/interactivebuttonbase.h \
     mainwindow.h \
+    slide_show/sidehidelabel.h \
     slide_show/slideshow.h
 
 FORMS += \

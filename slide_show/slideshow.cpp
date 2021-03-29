@@ -19,7 +19,7 @@ void SlideShow::setPixmapSize(QSize size)
                          oneSize.height() + 6);
     for (int i = 0; i < labels.size(); i++)
     {
-        labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)));
+        labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)), oneSize.width() * imgOffside);
         labels.at(i)->setMinimumSize(1, 1);
         labels.at(i)->setMaximumSize(oneSize);
         labels.at(i)->resize(oneSize);
@@ -30,7 +30,7 @@ void SlideShow::setPixmapScale(bool scale)
 {
     this->scalePixmap = scale;
     for (int i = 0; i < labels.size(); i++)
-        labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)));
+        labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)), oneSize.width() * imgOffside);
 }
 
 void SlideShow::addImage(const QPixmap &pixmap, QString text)
@@ -41,13 +41,13 @@ void SlideShow::addImage(const QPixmap &pixmap, QString text)
 void SlideShow::insertImage(int index, const QPixmap &pixmap, QString text)
 {
     // 图片
-    QLabel* label = new QLabel(this);
+    SideHideLabel* label = new SideHideLabel(this);
     label->setScaledContents(true);
     labels.insert(index, label);
     texts.insert(index, text);
 
     pixmaps.insert(index, pixmap); // 添加原图
-    label->setPixmap(getScaledRoundedPixmap(pixmap));
+    label->setPixmap(getScaledRoundedPixmap(pixmap), oneSize.width() * imgOffside);
     label->setMinimumSize(1, 1);
     label->resize(oneSize);
     CREATE_SHADOW(label);
@@ -165,22 +165,25 @@ QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
     pixmap = pixmap.scaled(oneSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
 
     // 裁剪
-    if (!scalePixmap)
+    int needWidth = int(oneSize.width() * (1 + imgOffside * 2));
+    if (/* DISABLES CODE */ (true) || !scalePixmap)
     {
-        if (pixmap.width() > oneSize.width())
+        if (pixmap.width() > needWidth)
         {
-            pixmap = pixmap.copy(pixmap.width()/2 - oneSize.width()/2, 0,
-                                 oneSize.width(), oneSize.height());
+            pixmap = pixmap.copy(pixmap.width()/2 - needWidth/2, 0,
+                                 needWidth, oneSize.height());
         }
         else if (pixmap.height() > oneSize.height())
         {
             pixmap = pixmap.copy(0, pixmap.height()/2 - oneSize.height()/2,
-                                 oneSize.width(), oneSize.height());
+                                 needWidth, oneSize.height());
         }
     }
 
+    return pixmap;
+
     // 圆角
-    QPixmap dest(pixmap.size());
+    /* QPixmap dest(pixmap.size());
     dest.fill(Qt::transparent);
     QPainter painter(&dest);
     painter.setRenderHint(QPainter::Antialiasing, true);
@@ -190,7 +193,7 @@ QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
     path.addRoundedRect(rect, 10, 10);
     painter.setClipPath(path);
     painter.drawPixmap(rect, pixmap);
-    return dest;
+    return dest; */
 }
 
 void SlideShow::adjustLabels()
@@ -205,16 +208,16 @@ void SlideShow::adjustLabels()
     int marginTop = sh/2 - h / 2;
 
     // 计算尺寸
-    QRect centerRect(sw/2 - w/2, marginTop, w, h);
-    QRect leftRect(int(sw/2 - w*(1-(1-scale)*sideOffside)*3/4),
+    centerRect = QRect(sw/2 - w/2, marginTop, w, h);
+    leftRect = QRect(int(sw/2 - w*(1-(1-scale)*sideOffside)*3/4),
                    marginTop + int(h * (1 - scale) / 2),
                    int(w*scale),
                    int(h*scale));
-    QRect rightRect(int(sw/2 + w*(1-(1-scale)*sideOffside)*3/4 - w*scale),
+    rightRect = QRect(int(sw/2 + w*(1-(1-scale)*sideOffside)*3/4 - w*scale),
                     marginTop + int(h * (1 - scale) / 2),
                     int(w*scale),
                     int(h*scale));
-    QRect backRect(int(sw/2 - w*scale/2),
+    backRect = QRect(int(sw/2 - w*scale/2),
                    marginTop + int(h * (1 - scale) / 2),
                    int(w*scale),
                    int(h*scale));
@@ -233,7 +236,7 @@ void SlideShow::adjustLabels()
     }
 }
 
-void SlideShow::moveTo(QLabel *label, QRect geometry)
+void SlideShow::moveTo(SideHideLabel *label, QRect geometry)
 {
     if (label->geometry() == geometry)
         return ;
@@ -241,7 +244,20 @@ void SlideShow::moveTo(QLabel *label, QRect geometry)
     QPropertyAnimation* ani = new QPropertyAnimation(label, "geometry");
     ani->setStartValue(label->geometry());
     ani->setEndValue(geometry);
-    ani->setDuration(400);
+    ani->setDuration(300);
+    ani->setEasingCurve(QEasingCurve::OutQuad);
+    connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
+    ani->start();
+
+    ani = new QPropertyAnimation(label, "sideOffset");
+    ani->setStartValue(label->getSideOffset());
+    double offset = 0;
+    if (geometry.x() == leftRect.x())
+        offset = -label->getMaxOffset();
+    else if (geometry.x() == rightRect.x())
+        offset = label->getMaxOffset();
+    ani->setEndValue(offset);
+    ani->setDuration(500);
     ani->setEasingCurve(QEasingCurve::OutQuad);
     connect(ani, SIGNAL(finished()), ani, SLOT(deleteLater()));
     ani->start();
@@ -259,10 +275,10 @@ bool SlideShow::eventFilter(QObject *obj, QEvent *event)
 {
     if(event->type() == QEvent::MouseButtonRelease)
     {
-        if (labels.contains(static_cast<QLabel*const>(obj)))
+        if (labels.contains(static_cast<SideHideLabel*const>(obj)))
         {
             // 图片被单击
-            int index = labels.indexOf(static_cast<QLabel*const>(obj));
+            int index = labels.indexOf(static_cast<SideHideLabel*const>(obj));
             if (currentIndex == index) // 正面图片被单击
             {
                 emit signalImageClicked(index);
