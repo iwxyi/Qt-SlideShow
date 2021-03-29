@@ -33,17 +33,18 @@ void SlideShow::setPixmapScale(bool scale)
         labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)));
 }
 
-void SlideShow::addImage(const QPixmap &pixmap)
+void SlideShow::addImage(const QPixmap &pixmap, QString text)
 {
-    insertImage(labels.size(), pixmap);
+    insertImage(labels.size(), pixmap, text);
 }
 
-void SlideShow::insertImage(int index, const QPixmap &pixmap)
+void SlideShow::insertImage(int index, const QPixmap &pixmap, QString text)
 {
     // 图片
     QLabel* label = new QLabel(this);
     label->setScaledContents(true);
     labels.insert(index, label);
+    texts.insert(index, text);
 
     pixmaps.insert(index, pixmap); // 添加原图
     label->setPixmap(getScaledRoundedPixmap(pixmap));
@@ -81,6 +82,7 @@ void SlideShow::removeImage(int index)
 {
     labels.takeAt(index)->deleteLater();
     pixmaps.removeAt(index);
+    texts.removeAt(index);
     indications.takeAt(index)->deleteLater();
 
     // 加了阴影，如果没有图片从而没有动画的话，阴影会残留下来
@@ -262,7 +264,10 @@ bool SlideShow::eventFilter(QObject *obj, QEvent *event)
             // 图片被单击
             int index = labels.indexOf(static_cast<QLabel*const>(obj));
             if (currentIndex == index) // 正面图片被单击
+            {
                 emit signalImageClicked(index);
+                emit signalTextActivated(texts.at(index));
+            }
             else // 不是当前图片，可能是动画或者两侧的
                 setCurrentIndex(index);
         }

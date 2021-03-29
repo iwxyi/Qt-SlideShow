@@ -27,8 +27,8 @@ public:
     void setPixmapSize(QSize size);
     void setPixmapScale(bool scale);
 
-    void addImage(const QPixmap& pixmap);
-    void insertImage(int index, const QPixmap& pixmap);
+    void addImage(const QPixmap& pixmap, QString text = "");
+    void insertImage(int index, const QPixmap& pixmap, QString text = "");
     void removeImage(int index);
 
     void setCurrentIndex(int index);
@@ -46,12 +46,14 @@ protected:
 
 signals:
     void signalImageClicked(int index);
+    void signalTextActivated(QString text);
 
 public slots:
 
 private:
     QList<QLabel*> labels;
     QList<QPixmap> pixmaps;
+    QList<QString> texts;
     QList<InteractiveButtonBase*> indications;
     int currentIndex = -1;
 
