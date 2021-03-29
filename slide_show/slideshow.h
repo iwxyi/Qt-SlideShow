@@ -27,12 +27,17 @@ public:
     void setPixmapSize(QSize size);
     void setPixmapScale(bool scale);
 
-    void addPixmap(const QPixmap& pixmap);
+    void addImage(const QPixmap& pixmap);
+    void insertImage(int index, const QPixmap& pixmap);
+    void removeImage(int index);
+
     void setCurrentIndex(int index);
+    int getCurrentIndex() const;
+
+    void adjustLabels();
 
 private:
     QPixmap getScaledRoundedPixmap(QPixmap pixmap) const;
-    void adjustLabels();
     void moveTo(QLabel* label, QRect geometry);
 
 protected:
@@ -40,7 +45,7 @@ protected:
     bool eventFilter(QObject * obj, QEvent * event) override;
 
 signals:
-    void signalCardClicked(int index);
+    void signalImageClicked(int index);
 
 public slots:
 
@@ -48,7 +53,7 @@ private:
     QList<QLabel*> labels;
     QList<QPixmap> pixmaps;
     QList<InteractiveButtonBase*> indications;
-    int currentIndex = 0;
+    int currentIndex = -1;
 
     QColor normalColor = QColor(172, 128, 58);
     QColor selectColor = Qt::yellow;

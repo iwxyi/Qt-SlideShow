@@ -33,19 +33,24 @@ void SlideShow::setPixmapScale(bool scale)
         labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)));
 }
 
-void SlideShow::addPixmap(const QPixmap &pixmap)
+void SlideShow::addImage(const QPixmap &pixmap)
+{
+    insertImage(labels.size(), pixmap);
+}
+
+void SlideShow::insertImage(int index, const QPixmap &pixmap)
 {
     // 图片
     QLabel* label = new QLabel(this);
     label->setScaledContents(true);
-    labels.append(label);
+    labels.insert(index, label);
 
-    pixmaps.append(pixmap); // 添加原图
+    pixmaps.insert(index, pixmap); // 添加原图
     label->setPixmap(getScaledRoundedPixmap(pixmap));
     label->setMinimumSize(1, 1);
     label->resize(oneSize);
     CREATE_SHADOW(label);
-
+    label->show();
     label->installEventFilter(this);
 
     // 指示球
@@ -54,21 +59,51 @@ void SlideShow::addPixmap(const QPixmap &pixmap)
     btn->setRadius(4);
     btn->setNormalColor(normalColor);
     btn->setHoverColor(selectColor);
-    indications.append(btn);
-    indicationLayout->addWidget(btn);
+    indications.insert(index, btn);
+    indicationLayout->insertWidget(index, btn);
 
-    int index = indications.size() - 1;
     connect(btn, &InteractiveButtonBase::signalMouseEnter, this, [=]{
+        int index = indications.indexOf(btn);
         setCurrentIndex(index);
     });
 
     for (int i = 0; i < indications.size(); i++)
         indications.at(i)->raise();
+
+    if (currentIndex > index)
+    {
+        currentIndex++;
+        setCurrentIndex(currentIndex);
+    }
+}
+
+void SlideShow::removeImage(int index)
+{
+    labels.takeAt(index)->deleteLater();
+    pixmaps.removeAt(index);
+    indications.takeAt(index)->deleteLater();
+
+    // 加了阴影，如果没有图片从而没有动画的话，阴影会残留下来
+    if (!labels.size())
+        update();
+    else
+    {
+        if (currentIndex > index)
+            currentIndex--;
+        setCurrentIndex(currentIndex);
+    }
 }
 
 void SlideShow::setCurrentIndex(int index)
 {
     int count = labels.size();
+    if (currentIndex >= count)
+        currentIndex = count-1;
+    if (currentIndex < 0)
+        currentIndex = 0;
+    if (currentIndex >= count)
+        return ;
+
     bool leftToRight = currentIndex < index;
     if (currentIndex < indications.size())
         indications.at(currentIndex)->setNormalColor(normalColor);
@@ -78,9 +113,7 @@ void SlideShow::setCurrentIndex(int index)
             || (index == 0 && currentIndex == count-1)
             || (index == count-1 && currentIndex == 0);
 
-    // 先提前升好（不然会露出其他背景）
-
-    // 先提升目标
+    // 先提升目标（不然其他背景会先闪一下）
     labels.at(index)->raise();
     if (bro) // 如果是非连续，就不用还原了
     {
@@ -101,6 +134,8 @@ void SlideShow::setCurrentIndex(int index)
 
     // 延迟raise
     QTimer::singleShot(100, [=]{
+        if (labels.size() != count) // 可能在动画的时候，修改了数据
+            return ;
         if (leftToRight)
             labels.at((index + 1) % count)->raise();
         labels.at((index + count - 1) % count)->raise();
@@ -115,6 +150,11 @@ void SlideShow::setCurrentIndex(int index)
         }
         indications.at(index)->setNormalColor(selectColor);
     });
+}
+
+int SlideShow::getCurrentIndex() const
+{
+    return currentIndex;
 }
 
 QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
@@ -222,7 +262,7 @@ bool SlideShow::eventFilter(QObject *obj, QEvent *event)
             // 图片被单击
             int index = labels.indexOf(static_cast<QLabel*const>(obj));
             if (currentIndex == index) // 正面图片被单击
-                emit signalCardClicked(index);
+                emit signalImageClicked(index);
             else // 不是当前图片，可能是动画或者两侧的
                 setCurrentIndex(index);
         }
