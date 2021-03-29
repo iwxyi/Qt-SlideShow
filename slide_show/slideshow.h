@@ -26,7 +26,7 @@ public:
     explicit SlideShow(QWidget *parent = nullptr);
 
     void setPixmapSize(QSize size);
-    void setPixmapScale(bool scale);
+    void setPixmapScale(bool scale); // 已废弃
 
     void addImage(const QPixmap& pixmap, QString text = "");
     void insertImage(int index, const QPixmap& pixmap, QString text = "");
@@ -64,7 +64,7 @@ private:
     QSize oneSize;            // 默认图片大小
     double backScale = 0.8;   // 两侧卡片的缩放程度
     double sideOffside = 0.5; // 两侧卡片的位置偏移，越大越靠近中间
-    double imgOffside = 0.1;  // 图片内偏移比例
+    double imgOffside = 0.15; // 图片内偏移比例
     bool scalePixmap = false; // 图片居中裁剪还是大小缩放（现在只能为false了）
     QHBoxLayout* indicationLayout;
 

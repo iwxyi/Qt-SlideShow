@@ -162,10 +162,10 @@ int SlideShow::getCurrentIndex() const
 QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
 {
     // 缩放
-    pixmap = pixmap.scaled(oneSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+    int needWidth = int(oneSize.width() * (1 + imgOffside * 2));
+    pixmap = pixmap.scaled(needWidth, oneSize.height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
 
     // 裁剪
-    int needWidth = int(oneSize.width() * (1 + imgOffside * 2));
     if (/* DISABLES CODE */ (true) || !scalePixmap)
     {
         if (pixmap.width() > needWidth)
