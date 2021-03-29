@@ -1,3 +1,4 @@
+#include <QEvent>
 #include "slideshow.h"
 
 SlideShow::SlideShow(QWidget *parent) : QWidget(parent)
@@ -34,6 +35,7 @@ void SlideShow::setPixmapScale(bool scale)
 
 void SlideShow::addPixmap(const QPixmap &pixmap)
 {
+    // 图片
     QLabel* label = new QLabel(this);
     label->setScaledContents(true);
     labels.append(label);
@@ -44,6 +46,9 @@ void SlideShow::addPixmap(const QPixmap &pixmap)
     label->resize(oneSize);
     CREATE_SHADOW(label);
 
+    label->installEventFilter(this);
+
+    // 指示球
     InteractiveButtonBase* btn = new InteractiveButtonBase(this);
     btn->setFixedSize(8, 8);
     btn->setRadius(4);
@@ -206,5 +211,23 @@ void SlideShow::resizeEvent(QResizeEvent *event)
 
     // 调整已有图片的大小
     adjustLabels();
+}
+
+bool SlideShow::eventFilter(QObject *obj, QEvent *event)
+{
+    if(event->type() == QEvent::MouseButtonRelease)
+    {
+        if (labels.contains(static_cast<QLabel*const>(obj)))
+        {
+            // 图片被单击
+            int index = labels.indexOf(static_cast<QLabel*const>(obj));
+            if (currentIndex == index) // 正面图片被单击
+                emit signalCardClicked(index);
+            else // 不是当前图片，可能是动画或者两侧的
+                setCurrentIndex(index);
+        }
+    }
+
+    return  QWidget::eventFilter(obj, event);
 }
 

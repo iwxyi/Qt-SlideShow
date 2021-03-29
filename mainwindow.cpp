@@ -30,6 +30,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->widget->addPixmap(QPixmap(":/test/images/img5.jpg"));
     ui->widget->setCurrentIndex(0);
     ui->widget->adjustSize();
+
+    connect(ui->widget, &SlideShow::signalCardClicked, this, [=](int index){
+        qDebug() << "单击：" << index;
+    });
 }
 
 MainWindow::~MainWindow()
