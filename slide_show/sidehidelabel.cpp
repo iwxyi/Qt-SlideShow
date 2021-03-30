@@ -6,6 +6,17 @@ SideHideLabel::SideHideLabel(QWidget *parent) : QLabel(parent)
 {
 }
 
+SideHideLabel *SideHideLabel::copy(const SideHideLabel *other)
+{
+    SideHideLabel* label = new SideHideLabel(other->parentWidget());
+    label->setGeometry(other->geometry());
+    label->sideOffset = other->sideOffset;
+    label->startX = other->startX;
+    label->radius = other->radius;
+    label->pixmap = other->pixmap;
+    return label;
+}
+
 void SideHideLabel::setPixmap(const QPixmap &pixmap, double sideMaxOffset)
 {
 //    QLabel::setPixmap(pixmap);

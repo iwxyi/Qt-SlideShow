@@ -11,6 +11,8 @@ class SideHideLabel : public QLabel
 public:
     SideHideLabel(QWidget* parent = nullptr);
 
+    static SideHideLabel* copy(const SideHideLabel* other);
+
     void setPixmap(const QPixmap& pixmap, double sideMaxOffset);
     double getMaxOffset() const;
 

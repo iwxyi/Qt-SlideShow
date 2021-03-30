@@ -35,7 +35,7 @@ public:
     void setCurrentIndex(int index);
     int getCurrentIndex() const;
 
-    void adjustLabels();
+    void adjustLabels(SideHideLabel* hidingLabel = nullptr);
 
 private:
     QPixmap getScaledRoundedPixmap(QPixmap pixmap) const;
@@ -57,6 +57,7 @@ private:
     QList<QString> texts;
     QList<InteractiveButtonBase*> indications;
     int currentIndex = -1;
+    SideHideLabel* hidingLabel = nullptr;
 
     QColor normalColor = QColor(172, 128, 58);
     QColor selectColor = Qt::yellow;

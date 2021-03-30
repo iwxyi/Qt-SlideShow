@@ -99,15 +99,15 @@ void SlideShow::removeImage(int index)
 void SlideShow::setCurrentIndex(int index)
 {
     int count = labels.size();
-    if (currentIndex >= count)
-        currentIndex = count-1;
-    if (currentIndex < 0)
-        currentIndex = 0;
-    if (currentIndex >= count)
+    if (index >= count)
+        index = count-1;
+    if (index < 0)
+        index = 0;
+    if (index >= count)
         return ;
 
     bool leftToRight = currentIndex < index;
-    if (currentIndex < indications.size())
+    if (currentIndex > 0 && currentIndex < count)
         indications.at(currentIndex)->setNormalColor(normalColor);
 
     // 判断是否连续的
@@ -117,25 +117,34 @@ void SlideShow::setCurrentIndex(int index)
 
     // 先提升目标（不然其他背景会先闪一下）
     labels.at(index)->raise();
-    if (bro) // 如果是非连续，就不用还原了
+    if (currentIndex > -1 && bro) // 如果是非连续，就不用还原了
     {
         // 当前的布局还原，动画消失
-        if (!leftToRight)
+        if (!leftToRight) // 从右到左，右边在上
             labels.at((currentIndex + 1) % count)->raise();
         labels.at((currentIndex + count - 1) % count)->raise();
-        if (leftToRight)
+        if (leftToRight)  // 从左到右，左边在上
             labels.at((currentIndex + 1) % count)->raise();
         labels.at(currentIndex)->raise();
     }
-    for (int i = 0; i < indications.size(); i++)
-        indications.at(i)->raise();
+
+    // 设置即将离开的label
+    SideHideLabel* leavingLabel = nullptr;
+    if (currentIndex >= 0 && currentIndex < count)
+    {
+        leavingLabel = labels.at(currentIndex);
+    }
 
     // 开始切换
     currentIndex = index;
-    adjustLabels();
+    adjustLabels(leavingLabel);
+
+    // 指示球始终置顶
+    for (int i = 0; i < indications.size(); i++)
+        indications.at(i)->raise();
 
     // 延迟raise
-    QTimer::singleShot(100, [=]{
+//    QTimer::singleShot(100, [=]{
         if (labels.size() != count) // 可能在动画的时候，修改了数据
             return ;
         if (leftToRight)
@@ -144,6 +153,8 @@ void SlideShow::setCurrentIndex(int index)
         if (!leftToRight)
             labels.at((index + 1) % count)->raise();
         labels.at(index)->raise();
+        if (hidingLabel)
+            hidingLabel->raise();
 
         for (int i = 0; i < indications.size(); i++)
         {
@@ -151,7 +162,7 @@ void SlideShow::setCurrentIndex(int index)
             indications.at(i)->setNormalColor(normalColor);
         }
         indications.at(index)->setNormalColor(selectColor);
-    });
+//    });
 }
 
 int SlideShow::getCurrentIndex() const
@@ -196,7 +207,7 @@ QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
     return dest; */
 }
 
-void SlideShow::adjustLabels()
+void SlideShow::adjustLabels(SideHideLabel *leavingLabel)
 {
     if (!labels.size())
         return ;
@@ -232,7 +243,38 @@ void SlideShow::adjustLabels()
             rect = rightRect;
         else if ((i + 1) % count == currentIndex)
             rect = leftRect;
-        moveTo(labels.at(i % count), rect);
+        auto label = labels.at(i % count);
+        moveTo(label, rect);
+
+        // 是否同样进行一个透明度渐变的拷贝动作
+        if (leavingLabel && label == leavingLabel)
+        {
+            hidingLabel = SideHideLabel::copy(leavingLabel);
+            auto opaLabel = hidingLabel;
+
+            moveTo(opaLabel, rect);
+            opaLabel->show();
+
+            // 设置透明度
+            QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(opaLabel);
+            effect->setOpacity(1);
+            opaLabel->setGraphicsEffect(effect);
+
+            // 透明度动画
+            QPropertyAnimation* ani = new QPropertyAnimation(effect, "opacity");
+            ani->setStartValue(1);
+            ani->setEndValue(0);
+            ani->setEasingCurve(QEasingCurve::OutQuad);
+            ani->setDuration(300);
+            connect(ani, &QPropertyAnimation::finished, this, [=]{
+                if (hidingLabel == opaLabel)
+                    hidingLabel = nullptr;
+                ani->deleteLater();
+                opaLabel->deleteLater();
+                effect->deleteLater();
+            });
+            ani->start();
+        }
     }
 }
 
