@@ -110,24 +110,6 @@ void SlideShow::setCurrentIndex(int index)
     if (currentIndex > 0 && currentIndex < count)
         indications.at(currentIndex)->setNormalColor(normalColor);
 
-    // 判断是否连续的
-    bool bro = qAbs(index - currentIndex) == 1
-            || (index == 0 && currentIndex == count-1)
-            || (index == count-1 && currentIndex == 0);
-
-    // 先提升目标（不然其他背景会先闪一下）
-    labels.at(index)->raise();
-    if (currentIndex > -1 && bro) // 如果是非连续，就不用还原了
-    {
-        // 当前的布局还原，动画消失
-        if (!leftToRight) // 从右到左，右边在上
-            labels.at((currentIndex + 1) % count)->raise();
-        labels.at((currentIndex + count - 1) % count)->raise();
-        if (leftToRight)  // 从左到右，左边在上
-            labels.at((currentIndex + 1) % count)->raise();
-        labels.at(currentIndex)->raise();
-    }
-
     // 设置即将离开的label
     SideHideLabel* leavingLabel = nullptr;
     if (currentIndex >= 0 && currentIndex < count)
@@ -139,30 +121,22 @@ void SlideShow::setCurrentIndex(int index)
     currentIndex = index;
     adjustLabels(leavingLabel);
 
-    // 指示球始终置顶
+    // raise界面
+    if (leftToRight)  // 从左到右，左边在上
+        labels.at((index + 1) % count)->raise();
+    labels.at((index + count - 1) % count)->raise();
+    if (!leftToRight) // 从右到左，右边在上
+        labels.at((index + 1) % count)->raise();
+    labels.at(index)->raise();
+    if (hidingLabel)
+        hidingLabel->raise();
+
     for (int i = 0; i < indications.size(); i++)
+    {
         indications.at(i)->raise();
-
-    // 延迟raise
-//    QTimer::singleShot(100, [=]{
-        if (labels.size() != count) // 可能在动画的时候，修改了数据
-            return ;
-        if (leftToRight)
-            labels.at((index + 1) % count)->raise();
-        labels.at((index + count - 1) % count)->raise();
-        if (!leftToRight)
-            labels.at((index + 1) % count)->raise();
-        labels.at(index)->raise();
-        if (hidingLabel)
-            hidingLabel->raise();
-
-        for (int i = 0; i < indications.size(); i++)
-        {
-            indications.at(i)->raise();
-            indications.at(i)->setNormalColor(normalColor);
-        }
-        indications.at(index)->setNormalColor(selectColor);
-//    });
+        indications.at(i)->setNormalColor(normalColor);
+    }
+    indications.at(index)->setNormalColor(selectColor);
 }
 
 int SlideShow::getCurrentIndex() const
@@ -265,7 +239,7 @@ void SlideShow::adjustLabels(SideHideLabel *leavingLabel)
             ani->setStartValue(1);
             ani->setEndValue(0);
             ani->setEasingCurve(QEasingCurve::OutQuad);
-            ani->setDuration(300);
+            ani->setDuration(200);
             connect(ani, &QPropertyAnimation::finished, this, [=]{
                 if (hidingLabel == opaLabel)
                     hidingLabel = nullptr;
