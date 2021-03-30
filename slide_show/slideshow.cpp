@@ -10,13 +10,17 @@ SlideShow::SlideShow(QWidget *parent) : QWidget(parent)
     mainLayout->addStretch(1);
     mainLayout->addLayout(indicationLayout);
     indicationLayout->setAlignment(Qt::AlignCenter);
+
+    autoSlideTimer = new QTimer(this);
+    autoSlideTimer->setInterval(5000);
+    connect(autoSlideTimer, &QTimer::timeout, this, &SlideShow::slideToRight);
 }
 
 void SlideShow::setPixmapSize(QSize size)
 {
     this->oneSize = size;
-    this->setMinimumSize(int(oneSize.width() * (3 - backScale*2) + 6),
-                         oneSize.height() + 6);
+    this->setMinimumSize(int(oneSize.width() * (3 - backScale*2) + SHADOW_RADIUS),
+                         oneSize.height() + SHADOW_RADIUS);
     for (int i = 0; i < labels.size(); i++)
     {
         labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)), oneSize.width() * imgOffside);
@@ -31,6 +35,19 @@ void SlideShow::setPixmapScale(bool scale)
     this->scalePixmap = scale;
     for (int i = 0; i < labels.size(); i++)
         labels.at(i)->setPixmap(getScaledRoundedPixmap(pixmaps.at(i)), oneSize.width() * imgOffside);
+}
+
+void SlideShow::setAutoSlide(int interval)
+{
+    if (interval)
+    {
+        autoSlideTimer->setInterval(interval);
+        autoSlideTimer->start();
+    }
+    else
+    {
+        autoSlideTimer->stop();
+    }
 }
 
 void SlideShow::addImage(const QPixmap &pixmap, QString text)
@@ -105,6 +122,8 @@ void SlideShow::setCurrentIndex(int index)
         index = 0;
     if (index >= count)
         return ;
+    if (autoSlideTimer->isActive())
+        autoSlideTimer->start();
 
     bool leftToRight = currentIndex < index;
     if (currentIndex > 0 && currentIndex < count)
@@ -142,6 +161,20 @@ void SlideShow::setCurrentIndex(int index)
 int SlideShow::getCurrentIndex() const
 {
     return currentIndex;
+}
+
+void SlideShow::slideToLeft()
+{
+    if (!labels.size())
+        return ;
+    setCurrentIndex((currentIndex + labels.size() - 1) % labels.size());
+}
+
+void SlideShow::slideToRight()
+{
+    if (!labels.size())
+        return ;
+    setCurrentIndex((currentIndex + 1) % labels.size());
 }
 
 QPixmap SlideShow::getScaledRoundedPixmap(QPixmap pixmap) const
@@ -190,7 +223,7 @@ void SlideShow::adjustLabels(SideHideLabel *leavingLabel)
     int sw = width(), sh = height();
     int w = oneSize.width(), h = oneSize.height();
     double scale = backScale;
-    int marginTop = sh/2 - h / 2;
+    int marginTop = sh/2 - h / 2 - SHADOW_RADIUS/2;
 
     // 计算尺寸
     centerRect = QRect(sw/2 - w/2, marginTop, w, h);

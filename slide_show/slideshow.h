@@ -7,14 +7,17 @@
 #include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
 #include <QDebug>
+#include <QTimer>
 #include "interactive_buttons/interactivebuttonbase.h"
 #include "sidehidelabel.h"
+
+#define SHADOW_RADIUS 12
 
 #define CREATE_SHADOW(x)                                                      \
     do {                                                                      \
         QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect(x); \
         effect->setOffset(3, 3);                                              \
-        effect->setBlurRadius(12);                                            \
+        effect->setBlurRadius(SHADOW_RADIUS);                                            \
         effect->setColor(QColor(64, 64, 64, 64));                         \
         x->setGraphicsEffect(effect);                                         \
     } while (0)
@@ -27,15 +30,18 @@ public:
 
     void setPixmapSize(QSize size);
     void setPixmapScale(bool scale); // 已废弃
+    void setAutoSlide(int interval = 5000); // 设置自动轮播，interval=0时停止
+    int getCurrentIndex() const;
+    void adjustLabels(SideHideLabel* hidingLabel = nullptr);
 
+public slots:
     void addImage(const QPixmap& pixmap, QString text = "");
     void insertImage(int index, const QPixmap& pixmap, QString text = "");
     void removeImage(int index);
 
     void setCurrentIndex(int index);
-    int getCurrentIndex() const;
-
-    void adjustLabels(SideHideLabel* hidingLabel = nullptr);
+    void slideToLeft();
+    void slideToRight();
 
 private:
     QPixmap getScaledRoundedPixmap(QPixmap pixmap) const;
@@ -49,14 +55,13 @@ signals:
     void signalImageClicked(int index);
     void signalTextActivated(QString text);
 
-public slots:
-
 private:
     QList<SideHideLabel*> labels;
     QList<QPixmap> pixmaps;
     QList<QString> texts;
     QList<InteractiveButtonBase*> indications;
     int currentIndex = -1;
+    QTimer* autoSlideTimer;
     SideHideLabel* hidingLabel = nullptr;
 
     QColor normalColor = QColor(172, 128, 58);
